@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Enter Your Financial Information</h2>
+                <form id="financialForm">
+                    <div class="mb-3">
+                        <label for="age" class="form-label">Current Age</label>
+                        <input type="number" class="form-control" id="age" required min="18" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="current_savings" class="form-label">Current Savings ($)</label>
+                        <input type="number" class="form-control" id="current_savings" required min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="annual_income" class="form-label">Annual Income ($)</label>
+                        <input type="number" class="form-control" id="annual_income" required min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="retirement_age" class="form-label">Target Retirement Age</label>
+                        <input type="number" class="form-control" id="retirement_age" required min="35" max="100">
+                    </div>
+                    <div class="mb-4">
+                        <label for="num_children" class="form-label">Number of Children</label>
+                        <input type="number" class="form-control" id="num_children" required min="0" max="10">
+                    </div>
+                    
+                    <div id="children_container">
+                        <!-- Children inputs will be added here dynamically -->
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Calculate</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results" style="display: none;">
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Financial Health Analysis</h3>
+                    <div id="analysis_summary" class="mb-4">
+                        <pre style="white-space: pre-wrap; font-family: inherit;"></pre>
+                    </div>
+                    
+                    <div id="risk_assessment" class="mb-4">
+                        <h4 class="text-warning">Potential Risks</h4>
+                        <ul class="risk-list" style="color: #ff9999;"></ul>
+                    </div>
+                    
+                    <div id="recommendations" class="mb-4">
+                        <h4 class="text-info">Recommendations</h4>
+                        <ul class="recommendations-list" style="color: #99ff99;"></ul>
+                    </div>
+                    
+                    <h3 class="card-title mb-4">Financial Projections</h3>
+                    <div id="retirement_plot" class="mb-4"></div>
+                    <div id="education_plot" class="mb-4"></div>
+                    <div id="monthly_plot" class="mb-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle number of children input
+    $('#num_children').on('change', function() {
+        const numChildren = parseInt($(this).val());
+        const container = $('#children_container');
+        container.empty();
+        
+        for (let i = 0; i < numChildren; i++) {
+            container.append(`
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Child ${i + 1}</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Age</label>
+                            <input type="number" class="form-control child-age" required min="0" max="25">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Education Goal</label>
+                            <select class="form-control child-goal">
+                                <option value="college">College</option>
+                                <option value="university">University</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+    });
+    
+    // Handle form submission
+    $('#financialForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const children = [];
+        $('.child-age').each(function(i) {
+            children.push({
+                age: parseInt($(this).val()),
+                education_goal: $('.child-goal').eq(i).val()
+            });
+        });
+        
+        const data = {
+            age: parseInt($('#age').val()),
+            current_savings: parseFloat($('#current_savings').val()),
+            annual_income: parseFloat($('#annual_income').val()),
+            retirement_age: parseInt($('#retirement_age').val()),
+            children: children
+        };
+        
+        // Send data to server
+        $.ajax({
+            url: '/calculate',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                // Display plots
+                Plotly.newPlot('retirement_plot', response.retirement.data, response.retirement.layout);
+                if (response.education) {
+                    Plotly.newPlot('education_plot', response.education.data, response.education.layout);
+                }
+                if (response.monthly) {
+                    Plotly.newPlot('monthly_plot', response.monthly.data, response.monthly.layout);
+                }
+                
+                // Display analysis
+                $('#analysis_summary pre').text(response.analysis.summary);
+                
+                // Display risks
+                const riskList = $('.risk-list');
+                riskList.empty();
+                response.analysis.risks.forEach(risk => {
+                    riskList.append(`<li>${risk}</li>`);
+                });
+                
+                // Display recommendations
+                const recommendationsList = $('.recommendations-list');
+                recommendationsList.empty();
+                response.analysis.recommendations.forEach(recommendation => {
+                    recommendationsList.append(`<li>${recommendation}</li>`);
+                });
+                
+                // Show results section
+                $('#results').show();
+                
+                // Scroll to results
+                $('html, body').animate({
+                    scrollTop: $('#results').offset().top
+                }, 1000);
+            },
+            error: function(xhr, status, error) {
+                alert('Error calculating results: ' + error);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
