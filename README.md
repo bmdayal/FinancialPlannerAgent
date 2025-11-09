@@ -72,32 +72,12 @@ This repository is provided as-is for demonstration and learning. It is not prof
 
 ### Technical flow (high-level)
 
-```mermaid
-flowchart LR
-		A[User Browser] -->|POST /calculate| B(Flask App)
-		B --> C{Calculation Module}
-		C --> D[Retirement Projection]
-		C --> E[Education Cost Calc]
-		C --> F[Monthly Savings Calc]
-		C --> G[Analysis Generator]
-		B --> H[Plotly JSON generator]
-		H --> A
-		B --> I[Chat Endpoint]
-		I --> J[OpenAI API]
-		J --> I
-		I --> A
-		subgraph TechStack
-			B
-			J
-		end
-```
-
 %% Styling for Mermaid (some viewers support these directives)
 ```mermaid
 flowchart LR
-	classDef userStyle fill:#fef3c7,stroke:#d97706,stroke-width:2px;color:#92400e;
-	classDef appStyle fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;color:#024e63;
-	classDef calcStyle fill:#ecfccb,stroke:#65a30d,stroke-width:2px;color:#365314;
+	classDef userStyle fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+	classDef appStyle fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#024e63;
+	classDef calcStyle fill:#ecfccb,stroke:#65a30d,stroke-width:2px,color:#365314;
 	A[User Browser]:::userStyle -->|POST /calculate| B(Flask App):::appStyle
 	B --> C{Calculation Module}:::calcStyle
 	C --> D[Retirement Projection]
@@ -119,15 +99,6 @@ flowchart LR
 Notes: the app is a lightweight orchestration layer (Flask) that runs local calculation logic and returns Plotly JSON to the browser; the chat endpoint forwards context to OpenAI. The prompt in `financial_planner/PROMPT_generate_financial_planner.md` documents how to (re)generate the whole project.
 
 ### Business flow (very high level)
-
-```mermaid
-flowchart TD
-	U[User enters profile & children] --> V[App computes projections & analysis]
-	V --> W[User reviews financial health summary]
-	W --> X[User asks follow-up questions via chat]
-	X --> Y[Assistant provides recommendations]
-	Y --> Z[User adjusts inputs or saves scenario]
-```
 
 This business flow shows the user experience: input -> calculate -> interpret -> interact -> adjust.
 
